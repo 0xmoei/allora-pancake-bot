@@ -9,6 +9,10 @@ sudo apt install git screen python3 python3-pip ython3-venv
 
 pip install web3
 ```
+```console
+git clone https://github.com/0xmoei/allora-pancake-bot
+cd allora-pancake-bot
+```
 
 ## Wallet 1
 ```console
