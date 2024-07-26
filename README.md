@@ -34,3 +34,6 @@ screen -S bear
 python3 bet-bear.py
 ```
 Ctrl+A+D
+
+## Help this guide
+Don't forget to add pull request to correct the repository issues or add your ideas
