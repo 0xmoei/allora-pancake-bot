@@ -17,7 +17,8 @@ cd allora-pancake-bot
 ```
 
 ## Run Bot
-**We can run 1 or 2 wallets with betting 0.000035 ETH per epoch**
+* We can run 1 or 2 wallets with betting x amount of ETH per epoch
+* 2 Wallets with opposite bets decrease the risk
 ### Wallet 1
 ```console
 screen -S bull
