@@ -52,12 +52,15 @@ bet_amount_wei = w3.to_wei(bet_amount, 'ether')
 
 def bet_bear(epoch):
     nonce = w3.eth.get_transaction_count(public_address)
-    gas_price = w3.to_wei('0.01', 'gwei')
+    base_fee = w3.eth.get_block('latest')['baseFeePerGas']
+    max_priority_fee = w3.to_wei('2', 'gwei')
+    max_fee_per_gas = base_fee + max_priority_fee
     gas_limit = 138860
     txn = contract.functions.betBear(epoch).build_transaction({
         'chainId': 42161,  # Arbitrum mainnet chain ID
         'gas': gas_limit,
-        'gasPrice': gas_price,
+        'maxFeePerGas': max_fee_per_gas,
+        'maxPriorityFeePerGas': max_priority_fee,
         'nonce': nonce,
         'value': bet_amount_wei
     })
@@ -67,10 +70,14 @@ def bet_bear(epoch):
 
 def claim_rewards(epoch):
     nonce = w3.eth.get_transaction_count(public_address)
+    base_fee = w3.eth.get_block('latest')['baseFeePerGas']
+    max_priority_fee = w3.to_wei('2', 'gwei')
+    max_fee_per_gas = base_fee + max_priority_fee
     txn = contract.functions.claim([epoch]).build_transaction({
         'chainId': 42161,  # Arbitrum mainnet chain ID
         'gas': 138860,
-        'gasPrice': w3.to_wei('0.01', 'gwei'),
+        'maxFeePerGas': max_fee_per_gas,
+        'maxPriorityFeePerGas': max_priority_fee,
         'nonce': nonce
     })
     signed_txn = w3.eth.account.sign_transaction(txn, private_key)
@@ -80,7 +87,7 @@ def claim_rewards(epoch):
 def has_bet(epoch):
     # Check if the user has already placed a bet for the given epoch
     try:
-        return contract.functions.ledger(epoch, public_address).call()[0] > 0
+        return contract.functions.ledger(epoch, public_address).call()[1] > 0
     except Exception as e:
         print(f"Error checking if bet is placed for epoch {epoch}: {e}")
         return False
@@ -89,7 +96,7 @@ def has_bet_bull(epoch):
     # Check if the user has already placed a betBull for the given epoch
     try:
         bet_info = contract.functions.ledger(epoch, public_address).call()
-        return bet_info[0] > 0  # Assuming the first element in bet_info indicates betBull
+        return bet_info[1] > 0  # Assuming the second element in bet_info indicates betBull
     except Exception as e:
         print(f"Error checking if betBull is placed for epoch {epoch}: {e}")
         return False
@@ -110,6 +117,7 @@ current_epoch = contract.functions.currentEpoch().call()
 claim_last_5_epochs(current_epoch)
 
 previous_epoch = current_epoch
+bet_placed_epoch = None
 
 print(f"Starting script. Initial Epoch: {previous_epoch}")
 
@@ -122,14 +130,17 @@ try:
 
             # Update the previous epoch
             previous_epoch = current_epoch
+            bet_placed_epoch = None  # Reset bet placed epoch for new epoch
 
         # Check if a bet has already been placed for the current epoch
-        if not has_bet(current_epoch) and not has_bet_bull(current_epoch):
+        if bet_placed_epoch != current_epoch and not has_bet(current_epoch) and not has_bet_bull(current_epoch):
             # Check if the account has enough funds to place the bet
             account_balance = w3.eth.get_balance(public_address)
-            gas_price = w3.to_wei('0.01', 'gwei')
+            base_fee = w3.eth.get_block('latest')['baseFeePerGas']
+            max_priority_fee = w3.to_wei('2', 'gwei')
+            max_fee_per_gas = base_fee + max_priority_fee
             gas_limit = 138860
-            total_cost = bet_amount_wei + (gas_limit * gas_price)
+            total_cost = bet_amount_wei + (gas_limit * max_fee_per_gas)
             if account_balance < total_cost:
                 print(f"Insufficient funds to place bet on epoch {current_epoch}. Needed: {total_cost}, Available: {account_balance}")
                 break
@@ -138,6 +149,7 @@ try:
             print(f"Placing bet on epoch {current_epoch}")
             bet_tx = bet_bear(current_epoch)
             print(f"Bet transaction hash: {bet_tx.hex()}")
+            bet_placed_epoch = current_epoch  # Update bet placed epoch
 
         else:
             print(f"Already placed a bet on epoch {current_epoch}")
