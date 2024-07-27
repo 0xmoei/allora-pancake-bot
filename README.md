@@ -7,9 +7,9 @@
 ## Install Dependecies
 ```console
 sudo apt-get update
-sudo apt install git screen python3 python3-pip ython3-venv
+sudo apt install git screen python3 python3-pip pip3
 
-pip install web3
+pip3 install web3
 ```
 ```console
 git clone https://github.com/0xmoei/allora-pancake-bot
