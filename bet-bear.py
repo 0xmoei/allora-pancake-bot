@@ -50,10 +50,6 @@ bet_amount = float(input("Enter the amount to bet (in ETH): "))
 # Convert bet amount to Wei
 bet_amount_wei = w3.to_wei(bet_amount, 'ether')
 
-# Track win/loss summary
-won_epochs = 0
-lost_epochs = 0
-
 def bet_bear(epoch):
     nonce = w3.eth.get_transaction_count(public_address)
     gas_price = w3.to_wei('0.01', 'gwei')
@@ -81,18 +77,6 @@ def claim_rewards(epoch):
     tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
     return tx_hash
 
-def check_win_loss(epoch):
-    global won_epochs, lost_epochs
-    try:
-        if contract.functions.claimable(epoch, public_address).call():
-            won_epochs += 1
-            print(f"Epoch {epoch} is claimable. You won!")
-        else:
-            lost_epochs += 1
-            print(f"Epoch {epoch} is not claimable. You lost.")
-    except Exception as e:
-        print(f"Error checking win/loss for epoch {epoch}: {e}")
-
 def has_bet(epoch):
     # Check if the user has already placed a bet for the given epoch
     try:
@@ -110,9 +94,9 @@ def has_bet_bull(epoch):
         print(f"Error checking if betBull is placed for epoch {epoch}: {e}")
         return False
 
-def claim_last_20_epochs(current_epoch):
-    # Check and claim rewards for the last 20 epochs without counting them in win/loss summary
-    for epoch_to_check in range(current_epoch - 20, current_epoch):
+def claim_last_5_epochs(current_epoch):
+    # Check and claim rewards for the last 5 epochs
+    for epoch_to_check in range(current_epoch - 5, current_epoch):
         if epoch_to_check > 0:
             if contract.functions.claimable(epoch_to_check, public_address).call():
                 print(f"Claiming rewards for epoch {epoch_to_check}")
@@ -122,8 +106,8 @@ def claim_last_20_epochs(current_epoch):
 # Get the current epoch
 current_epoch = contract.functions.currentEpoch().call()
 
-# Claim rewards for the last 20 epochs at the start
-claim_last_20_epochs(current_epoch)
+# Claim rewards for the last 5 epochs at the start
+claim_last_5_epochs(current_epoch)
 
 previous_epoch = current_epoch
 
@@ -155,31 +139,14 @@ try:
             bet_tx = bet_bear(current_epoch)
             print(f"Bet transaction hash: {bet_tx.hex()}")
 
-            # Check and claim rewards for the second epoch behind after a successful bet
-            second_epoch_behind = current_epoch - 2
-            if second_epoch_behind > 0:
-                try:
-                    if contract.functions.claimable(second_epoch_behind, public_address).call():
-                        print(f"Claiming rewards for epoch {second_epoch_behind}")
-                        claim_tx = claim_rewards(second_epoch_behind)
-                        print(f"Claim transaction hash: {claim_tx.hex()}")
-                    check_win_loss(second_epoch_behind)
-                except ValueError as e:
-                    if 'nonce too low' in str(e):
-                        print(f"Nonce too low error for epoch {second_epoch_behind}. Retrying...")
-                        time.sleep(5)
-                        continue
-                    else:
-                        raise e
         else:
             print(f"Already placed a bet on epoch {current_epoch}")
 
-        # Print win/loss summary
-        print(f"Summary: Won Epochs: {won_epochs}, Lost Epochs: {lost_epochs}")
+        # Check and claim rewards for the last 5 epochs
+        claim_last_5_epochs(current_epoch)
 
         # Wait a short period before checking again
         time.sleep(5)  # Adjust the sleep time as needed for your use case
 
 except KeyboardInterrupt:
     print("\nScript interrupted by user. Exiting gracefully...")
-    print(f"Final Summary: Won Epochs: {won_epochs}, Lost Epochs: {lost_epochs}")
