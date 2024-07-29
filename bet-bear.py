@@ -69,7 +69,8 @@ def bet_bear(epoch):
     return tx_hash
 
 def claim_rewards(epoch):
-    nonce = w3.eth.get_transaction_count(public_address)
+    # Use 'pending' to get the correct nonce in case there are pending transactions
+    nonce = w3.eth.get_transaction_count(public_address, 'pending')
     base_fee = w3.eth.get_block('latest')['baseFeePerGas']
     max_priority_fee = w3.to_wei('2', 'gwei')
     max_fee_per_gas = base_fee + max_priority_fee
