@@ -50,12 +50,15 @@ bet_amount = float(input("Enter the amount to bet (in ETH): "))
 # Convert bet amount to Wei
 bet_amount_wei = w3.to_wei(bet_amount, 'ether')
 
+# Initialize nonce
+nonce = w3.eth.get_transaction_count(public_address, 'pending')
+
 def bet_bear(epoch):
-    nonce = w3.eth.get_transaction_count(public_address)
+    global nonce
     base_fee = w3.eth.get_block('latest')['baseFeePerGas']
     max_priority_fee = w3.to_wei('2', 'gwei')
     max_fee_per_gas = base_fee + max_priority_fee
-    gas_limit = 168860
+    gas_limit = 160860
     txn = contract.functions.betBear(epoch).build_transaction({
         'chainId': 42161,  # Arbitrum mainnet chain ID
         'gas': gas_limit,
@@ -66,23 +69,24 @@ def bet_bear(epoch):
     })
     signed_txn = w3.eth.account.sign_transaction(txn, private_key)
     tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    nonce += 1  # Increment nonce after sending the transaction
     return tx_hash
 
 def claim_rewards(epoch):
-    # Use 'pending' to get the correct nonce in case there are pending transactions
-    nonce = w3.eth.get_transaction_count(public_address, 'pending')
+    global nonce
     base_fee = w3.eth.get_block('latest')['baseFeePerGas']
     max_priority_fee = w3.to_wei('2', 'gwei')
     max_fee_per_gas = base_fee + max_priority_fee
     txn = contract.functions.claim([epoch]).build_transaction({
         'chainId': 42161,  # Arbitrum mainnet chain ID
-        'gas': 138860,
+        'gas': 168860,
         'maxFeePerGas': max_fee_per_gas,
         'maxPriorityFeePerGas': max_priority_fee,
         'nonce': nonce
     })
     signed_txn = w3.eth.account.sign_transaction(txn, private_key)
     tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    nonce += 1  # Increment nonce after sending the transaction
     return tx_hash
 
 def has_bet(epoch):
@@ -140,7 +144,7 @@ try:
             base_fee = w3.eth.get_block('latest')['baseFeePerGas']
             max_priority_fee = w3.to_wei('2', 'gwei')
             max_fee_per_gas = base_fee + max_priority_fee
-            gas_limit = 138860
+            gas_limit = 168860
             total_cost = bet_amount_wei + (gas_limit * max_fee_per_gas)
             if account_balance < total_cost:
                 print(f"Insufficient funds to place bet on epoch {current_epoch}. Needed: {total_cost}, Available: {account_balance}")
