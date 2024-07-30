@@ -55,7 +55,7 @@ def bet_bear(epoch):
     base_fee = w3.eth.get_block('latest')['baseFeePerGas']
     max_priority_fee = w3.to_wei('2', 'gwei')
     max_fee_per_gas = base_fee + max_priority_fee
-    gas_limit = 138860
+    gas_limit = 168860
     txn = contract.functions.betBear(epoch).build_transaction({
         'chainId': 42161,  # Arbitrum mainnet chain ID
         'gas': gas_limit,
