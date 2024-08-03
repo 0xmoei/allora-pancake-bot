@@ -112,6 +112,7 @@ def claim_last_5_epochs(current_epoch):
         if epoch_to_check > 0:
             if contract.functions.claimable(epoch_to_check, public_address).call():
                 print(f"Claiming rewards for epoch {epoch_to_check}")
+                time.sleep(60)  # Delay for 1 minute before claiming rewards
                 claim_tx = claim_rewards(epoch_to_check)
                 print(f"Claim transaction hash: {claim_tx.hex()}")
 
