@@ -68,7 +68,7 @@ def bet_bull(epoch):
         'value': bet_amount_wei
     })
     signed_txn = w3.eth.account.sign_transaction(txn, private_key)
-    tx_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    tx_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
     nonce += 1  # Increment nonce after sending the transaction
     return tx_hash
 
